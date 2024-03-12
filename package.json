@@ -1,15 +1,17 @@
 {
   "name": "abi-encoder-cli",
   "version": "1.0.0",
-  "description": "",
+  "description": "A CLI tool to encode calldata and function signatures for Ethereum smart contracts",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx tsx --watch src/index.ts"
+    "compile": "npx tsc",
+    "dev": "npx tsx --watch src/index.ts",
+    "start": "node dist/index.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Mateus Navarro",
+  "license": "MIT",
   "devDependencies": {
     "@types/figlet": "^1.5.8",
     "@types/inquirer": "^9.0.7",

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import chalk from "chalk";
+import * as  chalk from "chalk";
 
 import inquirer from "inquirer";
 import figlet from "figlet";
-import { getSelectorFromSignature } from "./utils/getSelectorFromSignature";
-import { sleep } from "./utils/sleep";
-import { calculateCalldata } from "./utils/calculateCalldata";
+import { getSelectorFromSignature } from "./utils/getSelectorFromSignature.js";
+import { sleep } from "./utils/sleep.js";
+import { calculateCalldata } from "./utils/calculateCalldata.js";
 const CALCULATE_SELECTOR_QUESTION = "Calculate function selector";
 const ENCODE_CALLDATA_QUESTION = "Encode calldata";
 
@@ -17,7 +17,7 @@ let signature: string = "";
 let selector: string = "";
 function printDivider() {
 	console.log(
-		chalk.yellow("-------------------------------------------------")
+		chalk.default.yellow("-------------------------------------------------")
 	);
 }
 function printTitle() {
@@ -27,7 +27,7 @@ function printTitle() {
 				console.error(err);
 				reject(err);
 			}
-			console.log(chalk.yellow(text));
+			console.log(chalk.default.yellow(text));
 			resolve(text);
 		});
 	});
@@ -54,7 +54,7 @@ async function calculateSelectorOption() {
 		message: "Enter the solidity function name:",
 	});
 	if (!answerFunctionName.functionName.length) {
-		console.log(chalk.yellow(`You must provide a non-empty name!`));
+		console.log(chalk.default.yellow(`You must provide a non-empty name!`));
 		await calculateSelectorOption();
 	}
 	if (
@@ -62,7 +62,7 @@ async function calculateSelectorOption() {
 		answerFunctionName.functionName.includes(")")
 	) {
 		console.log(
-			chalk.yellow(`Please,Enter the function name without the parenthesis`)
+			chalk.default.yellow(`Please,Enter the function name without the parenthesis`)
 		);
 		await calculateSelectorOption();
 	}
@@ -86,8 +86,8 @@ async function calculateSelectorOption() {
 	signature = signature + `(${argumentsTypes.join(",")})`;
 	selector = getSelectorFromSignature(signature);
 	printDivider();
-	console.log(`SIGNATURE: ${chalk.cyan(signature)}`);
-	console.log(`SELECTOR: ${chalk.green(selector)}`);
+	console.log(`SIGNATURE: ${chalk.default.cyan(signature)}`);
+	console.log(`SELECTOR: ${chalk.default.green(selector)}`);
 	printDivider();
 	await sleep();
 	//await backToMenuOrRepeat(calculateSelectorOption);
@@ -151,7 +151,7 @@ async function encodeCalldataOption(numberOfArguments: number) {
 	}
 	const calldata = calculateCalldata(signature, args);
 	printDivider();
-	console.log(`CALLDATA: ${chalk.green(calldata)}`);
+	console.log(`CALLDATA: ${chalk.default.green(calldata)}`);
 	printDivider();
 	await backToMenuOrRepeat(async () => encodeCalldataOption(numberOfArguments));
 }
