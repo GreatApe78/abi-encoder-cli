@@ -5,11 +5,20 @@ import inquirer from "inquirer";
 import figlet from "figlet";
 import { getSelectorFromSignature } from "./utils/getSelectorFromSignature";
 import { sleep } from "./utils/sleep";
+import { calculateCalldata } from "./utils/calculateCalldata";
 const CALCULATE_SELECTOR_QUESTION = "Calculate function selector";
 const ENCODE_CALLDATA_QUESTION = "Encode calldata";
-function printDivider(){
-    console.log(chalk.yellow("-------------------------------------------------"));
 
+const BACK_TO_MENU = "Back to menu";
+const REPEAT = "Repeat";
+
+let signature: string = "";
+
+let selector: string = "";
+function printDivider() {
+	console.log(
+		chalk.yellow("-------------------------------------------------")
+	);
 }
 function printTitle() {
 	return new Promise((resolve, reject) => {
@@ -25,7 +34,7 @@ function printTitle() {
 }
 
 async function showMenuOptions() {
-	const questions = [CALCULATE_SELECTOR_QUESTION, ENCODE_CALLDATA_QUESTION];
+	const questions = [CALCULATE_SELECTOR_QUESTION];
 	const answer = await inquirer.prompt({
 		name: "option",
 		type: "list",
@@ -36,15 +45,16 @@ async function showMenuOptions() {
 }
 
 async function calculateSelectorOption() {
-	let signature = "";
+	selector = "";
+	signature = "";
 	const argumentsTypes = [];
 	const answerFunctionName = await inquirer.prompt({
 		name: "functionName",
 		type: "input",
-		message: "Enter the solidity function name",
+		message: "Enter the solidity function name:",
 	});
 	if (!answerFunctionName.functionName.length) {
-		console.log(chalk.yellow(`Please,Enter the function name`));
+		console.log(chalk.yellow(`You must provide a non-empty name!`));
 		await calculateSelectorOption();
 	}
 	if (
@@ -74,31 +84,76 @@ async function calculateSelectorOption() {
 		argumentsTypes.push(answerArgumentType.argumentType);
 	}
 	signature = signature + `(${argumentsTypes.join(",")})`;
-	const selector = getSelectorFromSignature(signature);
-    printDivider();
+	selector = getSelectorFromSignature(signature);
+	printDivider();
 	console.log(`SIGNATURE: ${chalk.cyan(signature)}`);
 	console.log(`SELECTOR: ${chalk.green(selector)}`);
-    printDivider();
+	printDivider();
 	await sleep();
-	await backToMenuOrRepeat(calculateSelectorOption);
-}
-async function backToMenuOrRepeat(currentRoutine: () => Promise<any>) {
-	const BACK_TO_MENU = "Back to menu";
-	const REPEAT = "Repeat";
+	//await backToMenuOrRepeat(calculateSelectorOption);
+
 	const answer = await inquirer.prompt({
 		name: "option",
 		type: "list",
 		message: "Choose an option",
-		choices: [BACK_TO_MENU, REPEAT],
+		choices: [BACK_TO_MENU, REPEAT, ENCODE_CALLDATA_QUESTION],
 	});
-	console.clear();
-	if (answer.option === BACK_TO_MENU) {
-		await main();
-	} else {
-		await currentRoutine();
-	}
-}
+	switch (answer.option) {
+		case ENCODE_CALLDATA_QUESTION: {
+            await encodeCalldataOption(numberOfArguments);
+			break;
+		}
 
+		case REPEAT: {
+			await calculateSelectorOption();
+			break;
+		}
+		case BACK_TO_MENU: {
+			await main();
+			break;
+		}
+		default:
+			break;
+	}
+	//return {signature,selector}
+}
+async function backToMenuOrRepeat(routine:()=>Promise<any>) {
+    const answer = await inquirer.prompt({
+        name: "option",
+        type: "list",
+        message: "Choose an option",
+        choices: [BACK_TO_MENU, REPEAT],
+    });
+    switch (answer.option) {
+        case REPEAT: {
+            await routine();
+            break;
+        }
+        case BACK_TO_MENU: {
+            await main();
+            break;
+        }
+        default:
+            break;
+    }
+
+}
+async function encodeCalldataOption(numberOfArguments: number) {
+    const args = [];
+    for (let i = 1; i <= numberOfArguments; i++) {
+        const answer = await inquirer.prompt({
+            name: `argument`,
+            type: "input",
+            message: `Enter the value of argument ${i}:`,
+        });
+        args.push(answer.argument);
+    }
+    const calldata = calculateCalldata(signature, args);
+    printDivider();
+    console.log(`CALLDATA: ${chalk.green(calldata)}`);
+    printDivider();
+    await backToMenuOrRepeat(async ()=>encodeCalldataOption(numberOfArguments));
+}
 async function main() {
 	await printTitle();
 	const option = await showMenuOptions();
