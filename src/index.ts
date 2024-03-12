@@ -7,6 +7,10 @@ import { getSelectorFromSignature } from "./utils/getSelectorFromSignature";
 import { sleep } from "./utils/sleep";
 const CALCULATE_SELECTOR_QUESTION = "Calculate function selector";
 const ENCODE_CALLDATA_QUESTION = "Encode calldata";
+function printDivider(){
+    console.log(chalk.yellow("-------------------------------------------------"));
+
+}
 function printTitle() {
 	return new Promise((resolve, reject) => {
 		figlet("Abi Encoder!", (err, text) => {
@@ -70,44 +74,44 @@ async function calculateSelectorOption() {
 		argumentsTypes.push(answerArgumentType.argumentType);
 	}
 	signature = signature + `(${argumentsTypes.join(",")})`;
-    const selector = getSelectorFromSignature(signature)
+	const selector = getSelectorFromSignature(signature);
+    printDivider();
 	console.log(`SIGNATURE: ${chalk.cyan(signature)}`);
-    console.log(`SELECTOR: ${chalk.green( selector)}`);
-    await sleep()
-    await backToMenuOrRepeat(calculateSelectorOption)
-    
+	console.log(`SELECTOR: ${chalk.green(selector)}`);
+    printDivider();
+	await sleep();
+	await backToMenuOrRepeat(calculateSelectorOption);
 }
-async function backToMenuOrRepeat(currentRoutine:()=>Promise<any>){
-    const BACK_TO_MENU = "Back to menu";
-    const REPEAT = "Repeat";
-    const answer = await inquirer.prompt({
-        name: "option",
-        type: "list",
-        message: "Choose an option",
-        choices: [BACK_TO_MENU,REPEAT],
-    });
-    console.clear()
-    if(answer.option === BACK_TO_MENU){
-        await main()
-    }
-    else{
-        await currentRoutine()
-    }
+async function backToMenuOrRepeat(currentRoutine: () => Promise<any>) {
+	const BACK_TO_MENU = "Back to menu";
+	const REPEAT = "Repeat";
+	const answer = await inquirer.prompt({
+		name: "option",
+		type: "list",
+		message: "Choose an option",
+		choices: [BACK_TO_MENU, REPEAT],
+	});
+	console.clear();
+	if (answer.option === BACK_TO_MENU) {
+		await main();
+	} else {
+		await currentRoutine();
+	}
 }
 
 async function main() {
 	await printTitle();
 	const option = await showMenuOptions();
-    switch (option) {
-        case CALCULATE_SELECTOR_QUESTION:{
-            await calculateSelectorOption();
-            break;
-        }
-            
-    
-        default:
-            break;
-    }
+	switch (option) {
+		case CALCULATE_SELECTOR_QUESTION: {
+			await calculateSelectorOption();
+			break;
+		}
+
+		default: {
+			break;
+		}
+	}
 }
 
 main().catch((err) => {
