@@ -100,11 +100,12 @@ async function calculateSelectorOption() {
 	});
 	switch (answer.option) {
 		case ENCODE_CALLDATA_QUESTION: {
-            await encodeCalldataOption(numberOfArguments);
+			await encodeCalldataOption(numberOfArguments);
 			break;
 		}
 
 		case REPEAT: {
+            console.clear();
 			await calculateSelectorOption();
 			break;
 		}
@@ -117,44 +118,45 @@ async function calculateSelectorOption() {
 	}
 	//return {signature,selector}
 }
-async function backToMenuOrRepeat(routine:()=>Promise<any>) {
-    const answer = await inquirer.prompt({
-        name: "option",
-        type: "list",
-        message: "Choose an option",
-        choices: [BACK_TO_MENU, REPEAT],
-    });
-    switch (answer.option) {
-        case REPEAT: {
-            await routine();
-            break;
-        }
-        case BACK_TO_MENU: {
-            await main();
-            break;
-        }
-        default:
-            break;
-    }
-
+async function backToMenuOrRepeat(routine: () => Promise<any>) {
+	const answer = await inquirer.prompt({
+		name: "option",
+		type: "list",
+		message: "Choose an option",
+		choices: [BACK_TO_MENU, REPEAT],
+	});
+	switch (answer.option) {
+		case REPEAT: {
+            console.clear();
+			await routine();
+			break;
+		}
+		case BACK_TO_MENU: {
+			await main();
+			break;
+		}
+		default:
+			break;
+	}
 }
 async function encodeCalldataOption(numberOfArguments: number) {
-    const args = [];
-    for (let i = 1; i <= numberOfArguments; i++) {
-        const answer = await inquirer.prompt({
-            name: `argument`,
-            type: "input",
-            message: `Enter the value of argument ${i}:`,
-        });
-        args.push(answer.argument);
-    }
-    const calldata = calculateCalldata(signature, args);
-    printDivider();
-    console.log(`CALLDATA: ${chalk.green(calldata)}`);
-    printDivider();
-    await backToMenuOrRepeat(async ()=>encodeCalldataOption(numberOfArguments));
+	const args = [];
+	for (let i = 1; i <= numberOfArguments; i++) {
+		const answer = await inquirer.prompt({
+			name: `argument`,
+			type: "input",
+			message: `Enter the value of argument ${i}:`,
+		});
+		args.push(answer.argument);
+	}
+	const calldata = calculateCalldata(signature, args);
+	printDivider();
+	console.log(`CALLDATA: ${chalk.green(calldata)}`);
+	printDivider();
+	await backToMenuOrRepeat(async () => encodeCalldataOption(numberOfArguments));
 }
 async function main() {
+	console.clear();
 	await printTitle();
 	const option = await showMenuOptions();
 	switch (option) {
