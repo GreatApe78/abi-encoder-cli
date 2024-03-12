@@ -4,6 +4,7 @@
   "description": "A CLI tool to encode calldata and function signatures for Ethereum smart contracts",
   "main": "index.js",
   "type": "module",
+  "bin": "dist/index.js",
   "scripts": {
     "compile": "npx tsc",
     "dev": "npx tsx --watch src/index.ts",
