@@ -1,39 +1,22 @@
 #!/usr/bin/env node
-import * as  chalk from "chalk";
-
+import * as chalk from "chalk";
 import inquirer from "inquirer";
-import figlet from "figlet";
 import { getSelectorFromSignature } from "./utils/getSelectorFromSignature.js";
 import { sleep } from "./utils/sleep.js";
 import { calculateCalldata } from "./utils/calculateCalldata.js";
-const CALCULATE_SELECTOR_QUESTION = "Calculate function selector";
+import { printDivider, printTitle } from "./utils/printing.js";
+import { Step } from "./types/types.js";
+
+//const CALCULATE_SELECTOR_QUESTION = "Calculate function selector";
 const ENCODE_CALLDATA_QUESTION = "Encode calldata";
 
 const BACK_TO_MENU = "Back to menu";
 const REPEAT = "Repeat";
 
 let signature: string = "";
-
 let selector: string = "";
-function printDivider() {
-	console.log(
-		chalk.default.yellow("-------------------------------------------------")
-	);
-}
-function printTitle() {
-	return new Promise((resolve, reject) => {
-		figlet("Abi Encoder!", (err, text) => {
-			if (err) {
-				console.error(err);
-				reject(err);
-			}
-			console.log(chalk.default.yellow(text));
-			resolve(text);
-		});
-	});
-}
 
-async function showMenuOptions() {
+/* async function showMenuOptions() {
 	const questions = [CALCULATE_SELECTOR_QUESTION];
 	const answer = await inquirer.prompt({
 		name: "option",
@@ -43,6 +26,7 @@ async function showMenuOptions() {
 	});
 	return answer.option;
 }
+ */
 
 async function calculateSelectorOption() {
 	selector = "";
@@ -62,7 +46,9 @@ async function calculateSelectorOption() {
 		answerFunctionName.functionName.includes(")")
 	) {
 		console.log(
-			chalk.default.yellow(`Please,Enter the function name without the parenthesis`)
+			chalk.default.yellow(
+				`Please,Enter the function name without the parenthesis`
+			)
 		);
 		await calculateSelectorOption();
 	}
@@ -81,58 +67,66 @@ async function calculateSelectorOption() {
 			type: "input",
 			message: `Enter the type of argument ${i}:`,
 		});
-		argumentsTypes.push(answerArgumentType.argumentType);
+		let type = answerArgumentType.argumentType;
+		if(type==="CUSTOM"){
+			const answerCustomType = await inquirer.prompt({
+				name: "customType",
+				type: "input",
+				message: `Enter the properties of the custom type between parenthesis and separated by commas:`,
+			
+
+			});
+			type = answerCustomType.customType;
+			if(!type.includes("(") || !type.includes(")")){
+				console.log(
+					chalk.default.yellow(
+						`Please,Enter the custom type with parenthesis`
+					)
+				);
+				await calculateSelectorOption();
+			}
+		}
+
+		argumentsTypes.push(type);
 	}
 	signature = signature + `(${argumentsTypes.join(",")})`;
 	selector = getSelectorFromSignature(signature);
 	printDivider();
-	console.log(`SIGNATURE: ${chalk.default.cyan(signature)}`);
-	console.log(`SELECTOR: ${chalk.default.green(selector)}`);
+	console.log(`  SIGNATURE: ${chalk.default.cyan(signature)}`);
+	console.log(`  SELECTOR: ${chalk.default.green(selector)}`);
 	printDivider();
 	await sleep();
-	//await backToMenuOrRepeat(calculateSelectorOption);
 
-	const answer = await inquirer.prompt({
-		name: "option",
-		type: "list",
-		message: "Choose an option",
-		choices: [BACK_TO_MENU, REPEAT, ENCODE_CALLDATA_QUESTION],
+	await handleNextStep({
+		currentStep: calculateSelectorOption,
+		nextStep: {
+			name: ENCODE_CALLDATA_QUESTION,
+			routine: () => encodeCalldataOption(numberOfArguments),
+		},
 	});
-	switch (answer.option) {
-		case ENCODE_CALLDATA_QUESTION: {
-			await encodeCalldataOption(numberOfArguments);
-			break;
-		}
-
-		case REPEAT: {
-            console.clear();
-			await calculateSelectorOption();
-			break;
-		}
-		case BACK_TO_MENU: {
-			await main();
-			break;
-		}
-		default:
-			break;
-	}
-	//return {signature,selector}
 }
-async function backToMenuOrRepeat(routine: () => Promise<any>) {
+
+async function handleNextStep({ currentStep, nextStep }: Step) {
+	const choices = [BACK_TO_MENU, REPEAT].concat(nextStep ? nextStep.name : []);
 	const answer = await inquirer.prompt({
 		name: "option",
 		type: "list",
 		message: "Choose an option",
-		choices: [BACK_TO_MENU, REPEAT],
+		choices: choices,
 	});
 	switch (answer.option) {
 		case REPEAT: {
-            console.clear();
-			await routine();
+			console.clear();
+			await currentStep();
 			break;
 		}
 		case BACK_TO_MENU: {
 			await main();
+			break;
+		}
+		case nextStep?.name: {
+			console.clear();
+			await nextStep?.routine();
 			break;
 		}
 		default:
@@ -149,26 +143,32 @@ async function encodeCalldataOption(numberOfArguments: number) {
 		});
 		args.push(answer.argument);
 	}
-	const calldata = calculateCalldata(signature, args);
+	let calldata: string = "";
+	try {
+		calldata = calculateCalldata(signature, args);
+	} catch (error) {
+		console.log(
+			chalk.default.red(
+				"Error. You provided an invalid argument. Please, try again!"
+			)
+		);
+		await sleep(1000);
+		await handleNextStep({
+			currentStep: () => encodeCalldataOption(numberOfArguments),
+		});
+	}
 	printDivider();
-	console.log(`CALLDATA: ${chalk.default.green(calldata)}`);
+	console.log(`  CALLDATA: ${chalk.default.green(calldata)}`);
 	printDivider();
-	await backToMenuOrRepeat(async () => encodeCalldataOption(numberOfArguments));
+
+	await handleNextStep({
+		currentStep: () => encodeCalldataOption(numberOfArguments),
+	});
 }
 async function main() {
 	console.clear();
 	await printTitle();
-	const option = await showMenuOptions();
-	switch (option) {
-		case CALCULATE_SELECTOR_QUESTION: {
-			await calculateSelectorOption();
-			break;
-		}
-
-		default: {
-			break;
-		}
-	}
+	await calculateSelectorOption();
 }
 
 main().catch((err) => {
