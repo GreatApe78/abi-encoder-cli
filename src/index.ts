@@ -27,6 +27,7 @@ let selector: string = "";
 	return answer.option;
 }
  */
+
 async function calculateSelectorOption() {
 	selector = "";
 	signature = "";
@@ -67,6 +68,24 @@ async function calculateSelectorOption() {
 			message: `Enter the type of argument ${i}:`,
 		});
 		let type = answerArgumentType.argumentType;
+		if(type==="CUSTOM"){
+			const answerCustomType = await inquirer.prompt({
+				name: "customType",
+				type: "input",
+				message: `Enter the properties of the custom type between parenthesis and separated by commas:`,
+			
+
+			});
+			type = answerCustomType.customType;
+			if(!type.includes("(") || !type.includes(")")){
+				console.log(
+					chalk.default.yellow(
+						`Please,Enter the custom type with parenthesis`
+					)
+				);
+				await calculateSelectorOption();
+			}
+		}
 
 		argumentsTypes.push(type);
 	}
