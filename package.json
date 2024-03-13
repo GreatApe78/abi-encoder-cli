@@ -1,6 +1,6 @@
 {
   "name": "abi-encoder-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A CLI tool to encode calldata and function signatures for Ethereum smart contracts",
   "main": "index.js",
   "type": "module",
