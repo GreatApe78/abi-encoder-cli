@@ -7,7 +7,7 @@ import { calculateCalldata } from "./utils/calculateCalldata.js";
 import { printDivider, printTitle } from "./utils/printing.js";
 import { Step } from "./types/types.js";
 
-const CALCULATE_SELECTOR_QUESTION = "Calculate function selector";
+//const CALCULATE_SELECTOR_QUESTION = "Calculate function selector";
 const ENCODE_CALLDATA_QUESTION = "Encode calldata";
 
 const BACK_TO_MENU = "Back to menu";
@@ -16,7 +16,7 @@ const REPEAT = "Repeat";
 let signature: string = "";
 let selector: string = "";
 
-async function showMenuOptions() {
+/* async function showMenuOptions() {
 	const questions = [CALCULATE_SELECTOR_QUESTION];
 	const answer = await inquirer.prompt({
 		name: "option",
@@ -26,7 +26,7 @@ async function showMenuOptions() {
 	});
 	return answer.option;
 }
-
+ */
 async function calculateSelectorOption() {
 	selector = "";
 	signature = "";
@@ -66,41 +66,25 @@ async function calculateSelectorOption() {
 			type: "input",
 			message: `Enter the type of argument ${i}:`,
 		});
-		argumentsTypes.push(answerArgumentType.argumentType);
+		let type = answerArgumentType.argumentType;
+
+		argumentsTypes.push(type);
 	}
 	signature = signature + `(${argumentsTypes.join(",")})`;
 	selector = getSelectorFromSignature(signature);
 	printDivider();
-	console.log(`SIGNATURE: ${chalk.default.cyan(signature)}`);
-	console.log(`SELECTOR: ${chalk.default.green(selector)}`);
+	console.log(`  SIGNATURE: ${chalk.default.cyan(signature)}`);
+	console.log(`  SELECTOR: ${chalk.default.green(selector)}`);
 	printDivider();
 	await sleep();
 
-	const answer = await inquirer.prompt({
-		name: "option",
-		type: "list",
-		message: "Choose an option",
-		choices: [BACK_TO_MENU, REPEAT, ENCODE_CALLDATA_QUESTION],
+	await handleNextStep({
+		currentStep: calculateSelectorOption,
+		nextStep: {
+			name: ENCODE_CALLDATA_QUESTION,
+			routine: () => encodeCalldataOption(numberOfArguments),
+		},
 	});
-	switch (answer.option) {
-		case ENCODE_CALLDATA_QUESTION: {
-			await encodeCalldataOption(numberOfArguments);
-			break;
-		}
-
-		case REPEAT: {
-			console.clear();
-			await calculateSelectorOption();
-			break;
-		}
-		case BACK_TO_MENU: {
-			await main();
-			break;
-		}
-		default:
-			break;
-	}
-	//return {signature,selector}
 }
 
 async function handleNextStep({ currentStep, nextStep }: Step) {
@@ -140,9 +124,22 @@ async function encodeCalldataOption(numberOfArguments: number) {
 		});
 		args.push(answer.argument);
 	}
-	const calldata = calculateCalldata(signature, args);
+	let calldata: string = "";
+	try {
+		calldata = calculateCalldata(signature, args);
+	} catch (error) {
+		console.log(
+			chalk.default.red(
+				"Error. You provided an invalid argument. Please, try again!"
+			)
+		);
+		await sleep(1000);
+		await handleNextStep({
+			currentStep: () => encodeCalldataOption(numberOfArguments),
+		});
+	}
 	printDivider();
-	console.log(`CALLDATA: ${chalk.default.green(calldata)}`);
+	console.log(`  CALLDATA: ${chalk.default.green(calldata)}`);
 	printDivider();
 
 	await handleNextStep({
